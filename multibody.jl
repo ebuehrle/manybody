@@ -24,11 +24,11 @@ function sample()
     ra = rd[randperm(size(rd,1))[1:2],:]
     return ra
 end
-D2 = [sample() for _ in 1:100] .|>
+D2 = [sample() for _ in 1:200] .|>
     (d -> [d[1,"x"],d[1,"y"],d[2,"x"],d[2,"y"],d[1,"vx"],d[1,"vy"],d[2,"vx"],d[2,"vy"]]) |>
     stack
 
-d = 2
+d = 3
 @polyvar x[1:8]
 M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
 Λ2 = let v = monomials(x,0:d);
@@ -36,7 +36,8 @@ M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
     v'*inv(Q2+1e-4I)*v
 end
 
-x0 = D2[:,1]
+f0 = 1
+x0 = D2[:,f0]
 ϕ = monomials(x[1:4],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas(x,support=@set(x'x<=10))
