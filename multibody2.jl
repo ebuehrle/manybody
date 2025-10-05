@@ -36,13 +36,16 @@ M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
     v'*inv(Q2+1e-4I)*v
 end
 
-f0 = 1
-x0 = D2[:,f0]
+f0 = frames[counts .> 2][1]
+X0 = filter(e -> e["frame_id"] == f0, D)
+allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
+x0 = allpairs(X0)
+ρ0 = sum(DiracMeasure([t;x],[0;_x0]) for _x0 in x0) / length(x0)
+
 ϕ = monomials([t;x[1:4]],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-ρ0 = DiracMeasure([t;x],[0;x0])
 @objective m Min Mom(Λ2,ρ)
 @constraint m Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
 optimize!(m)
@@ -63,6 +66,6 @@ save("multibody2.pdf", Axis([
         D2[5,1:3:end]/3, D2[6,1:3:end]/3,
         style="-stealth, no markers, blue"
     ),
-    Plots.Scatter(reshape(x0[1:4],(2,2))),
-    Plots.Scatter(reshape(integrate.(x[1:4],[ρT]),(2,2)),style="red"),
+    Plots.Scatter(X0),
+    Plots.Scatter(integrate.(x[1:2],[ρT])...,style="red"),
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))
