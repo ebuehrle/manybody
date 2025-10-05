@@ -36,11 +36,12 @@ M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
     v'*inv(Q2+1e-4I)*v
 end
 
+x0 = D2[:,1]
 ϕ = monomials(x[1:4],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas(x,support=@set(x'x<=10))
 @variable m ρT Meas(x,support=@set(x'x<=10))
-ρ0 = DiracMeasure(x,D2[:,1])
+ρ0 = DiracMeasure(x,x0)
 @objective m Min Mom(Λ2,ρ)
 @constraint m Mom.(differentiate(ϕ,x[1:4])*x[5:8],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
 @constraint m Mom(1,ρ) == 1
@@ -62,5 +63,5 @@ save("multibody.pdf", Axis([
         D2[5,:]/3, D2[6,:]/3,
         style="-stealth, no markers, blue"
     ),
-    Plots.Scatter(reshape(D2[1:4,1],(2,2)))
+    Plots.Scatter(reshape(x0[1:4],(2,2)))
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))
