@@ -37,7 +37,7 @@ M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
 end
 
 F = frames[counts .> 1]
-for (fi,f0) in enumerate(F[1:10])
+for (fi,f0) in enumerate(F[1:100])
 X0 = filter(e -> e["frame_id"] == f0, D)
 allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
 x0 = allpairs(X0)
@@ -60,7 +60,7 @@ q2 = let v = monomials(x[3:4],0:d);
     v'*inv(Q+1e-4I)*v
 end
 
-save("multibody2$(fi).pdf", Axis([
+save("multibody2-$(fi).pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+1/q2(x,y),(-1,1),(-1,1)),
     Plots.Quiver(
         D2[1,1:3:end],   D2[2,1:3:end],
