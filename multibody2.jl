@@ -25,7 +25,7 @@ function rpair()
     ra = rd[randperm(size(rd,1))[1:2],:]
     return ra
 end
-D2 = [rpair() for _ in 1:1000] .|>
+D2 = [rpair() for _ in 1:3000] .|>
     (d -> [d[1,"x"],d[1,"y"],d[2,"x"],d[2,"y"],d[1,"vx"],d[1,"vy"],d[2,"vx"],d[2,"vy"]]) |>
     stack
 
@@ -64,8 +64,8 @@ end
 save("multibody2-$(fi).pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+1/q2(x,y),(-1,1),(-1,1)),
     Plots.Quiver(
-        D2[1,1:3:end],   D2[2,1:3:end],
-        D2[5,1:3:end]/3, D2[6,1:3:end]/3,
+        D2[1,1:300],   D2[2,1:300],
+        D2[5,1:300]/3, D2[6,1:300]/3,
         style="-stealth, no markers, blue"
     ),
     Plots.Scatter(X0),
