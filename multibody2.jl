@@ -5,6 +5,7 @@ using MosekTools
 using LinearAlgebra
 using PGFPlots
 using Random
+using StatsBase
 Random.seed!(1)
 
 D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
@@ -16,10 +17,10 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
 
 frames = unique(D[:,"frame_id"]) .|> Int
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
-mframe = frames[counts .> 1]
+weight = binomial.(counts, 2)
 
 function rpair()
-    rf = rand(mframe)
+    rf = sample(frames, weights(weight))
     rd = filter(e -> e["frame_id"] == rf, D)
     ra = rd[randperm(size(rd,1))[1:2],:]
     return ra
