@@ -36,13 +36,13 @@ M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
     v'*inv(Q2+1e-4I)*v
 end
 
-M1 = sum(DiracMeasure(x[1:4],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
-Λ1 = let v = monomials(x[1:4],0:d);
+M1 = sum(DiracMeasure(x[[1,2,5,6]],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
+Λ1 = let v = monomials(x[[1,2,5,6]],0:d);
     Q = integrate.(v*v',[M1]);
     v'*inv(Q+1e-4I)*v
 end
-M3 = sum(DiracMeasure(x[5:8],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
-Λ3 = let v = monomials(x[5:8],0:d);
+M3 = sum(DiracMeasure(x[[3,4,7,8]],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
+Λ3 = let v = monomials(x[[3,4,7,8]],0:d);
     Q = integrate.(v*v',[M3]);
     v'*inv(Q+1e-4I)*v
 end
