@@ -37,6 +37,17 @@ M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
     v'*inv(Q2+1e-4I)*v
 end
 
+M1 = sum(DiracMeasure(x[1:4],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
+Λ1 = let v = monomials(x[1:4],0:d);
+    Q = integrate.(v*v',[M1]);
+    v'*inv(Q+1e-4I)*v
+end
+M3 = sum(DiracMeasure(x[5:8],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
+Λ3 = let v = monomials(x[5:8],0:d);
+    Q = integrate.(v*v',[M3]);
+    v'*inv(Q+1e-4I)*v
+end
+
 F = frames[counts .> 1]
 for (fi,f0) in enumerate(F[1:100])
 X0 = filter(e -> e["frame_id"] == f0, D)
@@ -48,7 +59,7 @@ x0 = allpairs(X0)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(Λ2,ρ)
+@objective m Min Mom(Λ1+Λ2+Λ3,ρ)
 @constraint m Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
 optimize!(m)
 
