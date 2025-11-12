@@ -19,34 +19,18 @@ frames = unique(D[:,"frame_id"]) .|> Int
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 weight = binomial.(counts, 2)
 
-function rpair()
-    rf = sample(frames, weights(weight))
-    rd = filter(e -> e["frame_id"] == rf, D)
-    ra = rd[randperm(size(rd,1))[1:2],:]
-    return ra
-end
-D2 = [rpair() for _ in 1:3000] .|>
-    (d -> [d[1,"x"],d[1,"y"],d[2,"x"],d[2,"y"],d[1,"vx"],d[1,"vy"],d[2,"vx"],d[2,"vy"]]) |>
-    stack
-
 d = 2
-@polyvar t x[1:8]
-M2 = sum(DiracMeasure(x,collect(s)) for s in eachcol(D2)) / size(D2,2)
-Λ2 = let v = monomials(x,0:d);
-    Q2 = integrate.(v*v',[M2]);
-    v'*inv(Q2+1e-4I)*v
+@polyvar t x[1:8] x1[1:4] x2[1:4]
+M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(unique(frames))
+K0 = let v0 = monomials(x1,0:d);
+    Q = integrate.(v0*v0',[M]);
+    v1 = monomials(x1,0:d);
+    v2 = monomials(x2,0:d);
+    v1'*inv(Q+1e-4I)*v2
 end
-
-M1 = sum(DiracMeasure(x[[1,2,5,6]],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
-Λ1 = let v = monomials(x[[1,2,5,6]],0:d);
-    Q = integrate.(v*v',[M1]);
-    v'*inv(Q+1e-4I)*v
-end
-M3 = sum(DiracMeasure(x[[3,4,7,8]],collect(s[["x","y","vx","vy"]])) for s in eachrow(D)) / size(D,1)
-Λ3 = let v = monomials(x[[3,4,7,8]],0:d);
-    Q = integrate.(v*v',[M3]);
-    v'*inv(Q+1e-4I)*v
-end
+K =  subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[3,4,7,8]])...)
+Λ1 = subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[1,2,5,6]])...)
+Λ2 = subs(K0, (x1 .=> x[[3,4,7,8]])..., (x2 .=> x[[3,4,7,8]])...)
 
 F = frames[counts .> 1]
 for (fi,f0) in enumerate(F[1:100])
@@ -59,7 +43,7 @@ x0 = allpairs(X0)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(Λ1+Λ2+Λ3,ρ)
+@objective m Min Mom(2K+Λ1+Λ2,ρ)
 @constraint m Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
 optimize!(m)
 
@@ -75,8 +59,8 @@ end
 save("multibody2-$(fi).pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+1/q2(x,y),(-1,1),(-1,1)),
     Plots.Quiver(
-        D2[1,1:300],   D2[2,1:300],
-        D2[5,1:300]/3, D2[6,1:300]/3,
+        D[1:50:end,"x"],    D[1:50:end,"y"],
+        D[1:50:end,"vx"]/3, D[1:50:end,"vy"]/3,
         style="-stealth, no markers, blue"
     ),
     Plots.Scatter(X0),
