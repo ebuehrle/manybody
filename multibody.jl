@@ -4,8 +4,6 @@ using MomentOpt
 using MosekTools
 using LinearAlgebra
 using PGFPlots
-using Random
-Random.seed!(1)
 
 D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d[:,["frame_id","x","y","vx","vy"]]) |>
@@ -18,7 +16,7 @@ frames = D[:,"frame_id"] .|> Int
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 weight = binomial.(counts, 2)
 
-d = 2
+d = 3
 @polyvar t x[1:8] x1[1:4] x2[1:4]
 M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(unique(frames))
 K0 = let v0 = monomials(x1,0:d);

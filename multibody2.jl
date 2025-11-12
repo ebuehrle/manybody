@@ -4,9 +4,6 @@ using MomentOpt
 using MosekTools
 using LinearAlgebra
 using PGFPlots
-using Random
-using StatsBase
-Random.seed!(1)
 
 D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d[:,["frame_id","x","y","vx","vy"]]) |>
