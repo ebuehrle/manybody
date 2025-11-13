@@ -14,7 +14,6 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
 
 frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
-weight = binomial.(counts, 2)
 
 d = 3
 @polyvar t x[1:8] x1[1:4] x2[1:4]
