@@ -30,7 +30,7 @@ K =  subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[3,4,7,8]])...)
 Λ2 = subs(K0, (x1 .=> x[[3,4,7,8]])..., (x2 .=> x[[3,4,7,8]])...)
 
 F = frames[counts .> 1]
-f0 = first(F)
+f0 = F[100]
 X0 = filter(e -> e["frame_id"] == f0, D)
 allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
 x0 = allpairs(X0)[1]
