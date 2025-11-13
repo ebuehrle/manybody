@@ -6,9 +6,9 @@ using LinearAlgebra
 using PGFPlots
 
 D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
-    (d -> d[:,["frame_id","x","y","vx","vy"]]) |>
-    (d -> d .- [0 1000 1000 0 0]) |>
-    (d -> d ./ [1 20 20 20 20]) |>
+    (d -> d[:,["frame_id","track_id","x","y","vx","vy"]]) |>
+    (d -> d .- [0 0 1000 1000 0 0]) |>
+    (d -> d ./ [1 1 20 20 20 20]) |>
     (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
     (d -> filter(e -> -1 <= e["y"] <= 1, d))
 
@@ -55,23 +55,13 @@ q2 = [let v = monomials(x[3:4],0:d);
     v'*inv(Q+1e-4I)*v
 end for i=1:length(x0)]
 
-id0 = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
-    (d -> d[:,["track_id","frame_id","x","y","vx","vy"]]) |>
-    (d -> d .- [0 0 1000 1000 0 0]) |>
-    (d -> d ./ [1 1 20 20 20 20]) |>
-    (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
-    (d -> filter(e -> -1 <= e["y"] <= 1, d)) |>
+f1 = f0 + 3*10
+id0 = D |>
     (m -> filter(e -> e["frame_id"] == f0, m)) |>
     (m -> m[:,"track_id"]) |> unique
-f1 = f0 + 3*10
-X1 = CSV.read("vehicle_tracks_000.csv", DataFrame) |> 
+X1 = D |> 
     (m -> filter(e -> e["frame_id"] == f1, m)) |>
-    (m -> filter(e -> e["track_id"] ∈ id0, m)) |>
-    (m -> m[:,["x","y","vx","vy"]]) |>
-    (d -> d .- [1000 1000 0 0]) |>
-    (d -> d ./ [20 20 20 20]) |>
-    (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
-    (d -> filter(e -> -1 <= e["y"] <= 1, d))
+    (m -> filter(e -> e["track_id"] ∈ id0, m))
 
 save("multibody2-$(fi).pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+sum(1/q(x,y) for q in q2),(-1,1),(-1,1)),
