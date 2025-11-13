@@ -34,33 +34,35 @@ for (fi,f0) in enumerate(F[1:10:100])
 X0 = filter(e -> e["frame_id"] == f0, D)
 allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
 x0 = allpairs(X0)
-ρ0 = sum(DiracMeasure([t;x],[0;_x0]) for _x0 in x0) / length(x0)
+ρ0 = [DiracMeasure([t;x],[0;_x0]) for _x0 in x0]
 
 ϕ = monomials([t;x[1:4]],0:2d)
 m = GMPModel(Mosek.Optimizer)
-@variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
-@variable m ρT Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(2K + Λ1 + Λ2*length(x0), ρ)
-@constraint m Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
+@variable m ρ[i=1:length(x0)]  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
+@variable m ρT[i=1:length(x0)] Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
+@objective m Min Mom(2K + Λ1 + Λ2*length(x0), sum(ρ)/length(x0))
+@constraint m [i=1:length(x0)] Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ[i]) - Mom.(ϕ,ρT[i]) .== -integrate.(ϕ,ρ0[i])
+let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
+let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
 optimize!(m)
 
 q1 = let v = monomials(x[1:2],0:d);
-    Q = integrate.(v*v',[ρ]);
+    Q = integrate.(v*v',[ρ[1]]);
     v'*inv(Q+1e-4I)*v
 end
-q2 = let v = monomials(x[3:4],0:d);
-    Q = integrate.(v*v',[ρ])*length(x0);
+q2 = [let v = monomials(x[3:4],0:d);
+    Q = integrate.(v*v',[ρ[i]]);
     v'*inv(Q+1e-4I)*v
-end
+end for i=1:length(x0)]
 
 save("multibody2-$(fi).pdf", Axis([
-    Plots.Image((x,y)->1/q1(x,y)+1/q2(x,y),(-1,1),(-1,1)),
+    Plots.Image((x,y)->1/q1(x,y)+sum(1/q(x,y) for q in q2),(-1,1),(-1,1)),
     Plots.Quiver(
         D[1:50:end,"x"],    D[1:50:end,"y"],
         D[1:50:end,"vx"]/3, D[1:50:end,"vy"]/3,
         style="-stealth, no markers, blue"
     ),
     Plots.Scatter(X0),
-    Plots.Scatter(integrate.(x[1:2],[ρT])...,style="red"),
+    Plots.Scatter([integrate.(x[1:2],[ρT[1]]) integrate.(x[3:4],transpose(ρT))],style="red"),
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))
 end
