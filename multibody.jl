@@ -9,12 +9,11 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d[:,["frame_id","x","y","vx","vy"]]) |>
     (d -> d .- [0 1000 1000 0 0]) |>
     (d -> d ./ [1 20 20 20 20]) |>
-    (d -> filter(e -> -2 <= e["x"] <= 2, d)) |>
-    (d -> filter(e -> -2 <= e["y"] <= 2, d))
+    (d -> filter(e -> -1.5 <= e["x"] <= 1.5, d)) |>
+    (d -> filter(e -> -1.5 <= e["y"] <= 1.5, d))
 
 frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
-weight = binomial.(counts, 2)
 
 d = 3
 @polyvar t x[1:8] x1[1:4] x2[1:4]
@@ -35,6 +34,9 @@ D1 = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d ./ [1 20 20 20 20]) |>
     (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
     (d -> filter(e -> -1 <= e["y"] <= 1, d))
+
+frames = D[:,"frame_id"] .|> Int |> unique
+counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 
 F = frames[counts .> 1]
 f0 = 177

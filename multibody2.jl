@@ -9,12 +9,11 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d[:,["frame_id","track_id","x","y","vx","vy"]]) |>
     (d -> d .- [0 0 1000 1000 0 0]) |>
     (d -> d ./ [1 1 20 20 20 20]) |>
-    (d -> filter(e -> -2 <= e["x"] <= 2, d)) |>
-    (d -> filter(e -> -2 <= e["y"] <= 2, d))
+    (d -> filter(e -> -1.5 <= e["x"] <= 1.5, d)) |>
+    (d -> filter(e -> -1.5 <= e["y"] <= 1.5, d))
 
 frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
-weight = binomial.(counts, 2)
 
 d = 2
 @polyvar t x[1:8] x1[1:4] x2[1:4]
@@ -30,11 +29,14 @@ K =  subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[3,4,7,8]])...)
 Λ2 = subs(K0, (x1 .=> x[[3,4,7,8]])..., (x2 .=> x[[3,4,7,8]])...)
 
 D1 = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
-    (d -> d[:,["frame_id","x","y","vx","vy"]]) |>
-    (d -> d .- [0 1000 1000 0 0]) |>
-    (d -> d ./ [1 20 20 20 20]) |>
+    (d -> d[:,["frame_id","track_id","x","y","vx","vy"]]) |>
+    (d -> d .- [0 0 1000 1000 0 0]) |>
+    (d -> d ./ [1 1 20 20 20 20]) |>
     (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
     (d -> filter(e -> -1 <= e["y"] <= 1, d))
+
+frames = D[:,"frame_id"] .|> Int |> unique
+counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 
 F = frames[counts .> 1]
 for (fi,f0) in enumerate(F[1:10:100])
@@ -63,10 +65,10 @@ q2 = [let v = monomials(x[3:4],0:d);
 end for i=1:length(x0)]
 
 f1 = f0 + 3*10
-id0 = D |>
+id0 = D1 |>
     (m -> filter(e -> e["frame_id"] == f0, m)) |>
     (m -> m[:,"track_id"]) |> unique
-X1 = D |> 
+X1 = D1 |> 
     (m -> filter(e -> e["frame_id"] == f1, m)) |>
     (m -> filter(e -> e["track_id"] ∈ id0, m))
 
