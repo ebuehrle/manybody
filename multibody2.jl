@@ -40,7 +40,7 @@ x0 = allpairs(X0)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(2K+Λ1+Λ2,ρ)
+@objective m Min Mom(2K + Λ1 + Λ2*length(x0), ρ)
 @constraint m Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
 optimize!(m)
 
