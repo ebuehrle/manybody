@@ -49,7 +49,7 @@ q1 = let v = monomials(x[1:2],0:d);
     v'*inv(Q+1e-4I)*v
 end
 q2 = let v = monomials(x[3:4],0:d);
-    Q = integrate.(v*v',[ρ]);
+    Q = integrate.(v*v',[ρ])*length(x0);
     v'*inv(Q+1e-4I)*v
 end
 
