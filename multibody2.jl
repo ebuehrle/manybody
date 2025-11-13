@@ -36,12 +36,13 @@ allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"
 x0 = allpairs(X0)
 ρ0 = [DiracMeasure([t;x],[0;_x0]) for _x0 in x0]
 
+σ = Diagonal([0.01,0.01,0.1,0.1,0.01,0.01,0.1,0.1])
 ϕ = monomials([t;x[1:4]],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ[i=1:length(x0)]  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT[i=1:length(x0)] Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
 @objective m Min Mom(2K + Λ1 + Λ2*length(x0), sum(ρ)/length(x0))
-@constraint m [i=1:length(x0)] Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ[i]) - Mom.(ϕ,ρT[i]) .== -integrate.(ϕ,ρ0[i])
+@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x[1:4]])'*[1;x[5:8]] + 0.5*tr(σ*σ'*differentiate(differentiate(ϕ[j],x),x)),ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
 let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
 let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
 optimize!(m)
