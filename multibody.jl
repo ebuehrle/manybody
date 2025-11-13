@@ -12,13 +12,13 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
     (d -> filter(e -> -1 <= e["y"] <= 1, d))
 
-frames = D[:,"frame_id"] .|> Int
+frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 weight = binomial.(counts, 2)
 
 d = 3
 @polyvar t x[1:8] x1[1:4] x2[1:4]
-M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(unique(frames))
+M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(frames)
 K0 = let v0 = monomials(x1,0:d);
     Q = integrate.(v0*v0',[M]);
     v1 = monomials(x1,0:d);
@@ -30,10 +30,10 @@ K =  subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[3,4,7,8]])...)
 Λ2 = subs(K0, (x1 .=> x[[3,4,7,8]])..., (x2 .=> x[[3,4,7,8]])...)
 
 F = frames[counts .> 1]
-f0 = F[100]
+f0 = F[91]
 X0 = filter(e -> e["frame_id"] == f0, D)
 allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
-x0 = allpairs(X0)[1]
+x0 = allpairs(X0)[2]
 ρ0 = DiracMeasure([t;x],[0;x0])
 
 ϕ = monomials([t;x[1:4]],0:2d)
