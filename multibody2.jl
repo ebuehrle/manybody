@@ -16,7 +16,7 @@ frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 weight = binomial.(counts, 2)
 
-d = 2
+d = 3
 @polyvar t x[1:8] x1[1:4] x2[1:4]
 M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(frames)
 K0 = let v0 = monomials(x1,0:d);
@@ -36,7 +36,7 @@ allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"
 x0 = allpairs(X0)
 ρ0 = [DiracMeasure([t;x],[0;_x0]) for _x0 in x0]
 
-σ = Diagonal([0.01,0.01,0.1,0.1,0.01,0.01,0.1,0.1])
+σ = Diagonal([0.001,0.001,0.1,0.1,0.001,0.001,0.1,0.1])
 ϕ = monomials([t;x[1:4]],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ[i=1:length(x0)]  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
