@@ -9,14 +9,14 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d[:,["frame_id","track_id","x","y","vx","vy"]]) |>
     (d -> d .- [0 0 1000 1000 0 0]) |>
     (d -> d ./ [1 1 20 20 20 20]) |>
-    (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
-    (d -> filter(e -> -1 <= e["y"] <= 1, d))
+    (d -> filter(e -> -2 <= e["x"] <= 2, d)) |>
+    (d -> filter(e -> -2 <= e["y"] <= 2, d))
 
 frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 weight = binomial.(counts, 2)
 
-d = 3
+d = 2
 @polyvar t x[1:8] x1[1:4] x2[1:4]
 M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(frames)
 K0 = let v0 = monomials(x1,0:d);
@@ -29,9 +29,16 @@ K =  subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[3,4,7,8]])...)
 Λ1 = subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[1,2,5,6]])...)
 Λ2 = subs(K0, (x1 .=> x[[3,4,7,8]])..., (x2 .=> x[[3,4,7,8]])...)
 
+D1 = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
+    (d -> d[:,["frame_id","x","y","vx","vy"]]) |>
+    (d -> d .- [0 1000 1000 0 0]) |>
+    (d -> d ./ [1 20 20 20 20]) |>
+    (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
+    (d -> filter(e -> -1 <= e["y"] <= 1, d))
+
 F = frames[counts .> 1]
 for (fi,f0) in enumerate(F[1:10:100])
-X0 = filter(e -> e["frame_id"] == f0, D)
+X0 = filter(e -> e["frame_id"] == f0, D1)
 allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
 x0 = allpairs(X0)
 ρ0 = [DiracMeasure([t;x],[0;_x0]) for _x0 in x0]
@@ -66,8 +73,8 @@ X1 = D |>
 save("multibody2-$(fi).pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+sum(1/q(x,y) for q in q2),(-1,1),(-1,1)),
     Plots.Quiver(
-        D[1:50:end,"x"],    D[1:50:end,"y"],
-        D[1:50:end,"vx"]/3, D[1:50:end,"vy"]/3,
+        D1[1:50:end,"x"],    D1[1:50:end,"y"],
+        D1[1:50:end,"vx"]/3, D1[1:50:end,"vy"]/3,
         style="-stealth, no markers, blue"
     ),
     Plots.Scatter(X0),
