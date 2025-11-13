@@ -30,10 +30,10 @@ K =  subs(K0, (x1 .=> x[[1,2,5,6]])..., (x2 .=> x[[3,4,7,8]])...)
 Λ2 = subs(K0, (x1 .=> x[[3,4,7,8]])..., (x2 .=> x[[3,4,7,8]])...)
 
 F = frames[counts .> 1]
-f0 = F[95]
+f0 = 177
 X0 = filter(e -> e["frame_id"] == f0, D)
-allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
-x0 = allpairs(X0)[2]
+allpairs(d) = [[d[i,"x"],d[i,"y"],d[j,"x"],d[j,"y"],d[i,"vx"],d[i,"vy"],d[j,"vx"],d[j,"vy"]] for i=1:size(d,1)-1 for j=i+1:size(d,1)]
+x0 = allpairs(X0)[8]
 ρ0 = DiracMeasure([t;x],[0;x0])
 
 ϕ = monomials([t;x[1:4]],0:2d)
