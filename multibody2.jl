@@ -36,7 +36,7 @@ allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"
 x0 = allpairs(X0)
 ρ0 = [DiracMeasure([t;x;u],[0;_x0;0;0;0;0]) for _x0 in x0]
 
-σ = Diagonal([0.003,0.003,0.03,0.03,0.003,0.003,0.03,0.03])
+σ = Diagonal(2*[0.003,0.003,0.03,0.03,0.003,0.003,0.03,0.03])
 ϕ = monomials([t;x],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ[i=1:length(x0)]  Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10))
