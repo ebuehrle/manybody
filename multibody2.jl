@@ -9,8 +9,8 @@ D = CSV.read("vehicle_tracks_000.csv", DataFrame) |>
     (d -> d[:,["frame_id","track_id","x","y","vx","vy"]]) |>
     (d -> d .- [0 0 1000 1000 0 0]) |>
     (d -> d ./ [1 1 20 20 20 20]) |>
-    (d -> filter(e -> -1 <= e["x"] <= 1, d)) |>
-    (d -> filter(e -> -1 <= e["y"] <= 1, d))
+    (d -> filter(e -> -1.5 <= e["x"] <= 1.5, d)) |>
+    (d -> filter(e -> -1.5 <= e["y"] <= 1.5, d))
 
 frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
@@ -36,13 +36,12 @@ allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"
 x0 = allpairs(X0)
 ρ0 = [DiracMeasure([t;x;u],[0;_x0;0;0;0;0]) for _x0 in x0]
 
-σ = Diagonal(2*[0.003,0.003,0.03,0.03,0.003,0.003,0.03,0.03])
 ϕ = monomials([t;x],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ[i=1:length(x0)]  Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10))
 @variable m ρT[i=1:length(x0)] Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10 && t==3))
 @objective m Min Mom(2K + Λ1 + Λ2*length(x0) + u'u, sum(ρ)/length(x0))
-@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x])'*[1;x[5:8];u] + 0.5*tr(σ*σ'*differentiate(differentiate(ϕ[j],x),x)),ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
+@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x])'*[1;x[5:8];u],ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
 let v = monomials([t;x[[1,2,5,6]];u[[1,2]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
 let v = monomials([t;x[[1,2,5,6]];u[[1,2]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
 optimize!(m)
