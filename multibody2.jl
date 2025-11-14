@@ -42,9 +42,9 @@ m = GMPModel(Mosek.Optimizer)
 @variable m ρ[i=1:length(x0)]  Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10))
 @variable m ρT[i=1:length(x0)] Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10 && t==3))
 @objective m Min Mom(2K + Λ1 + Λ2*length(x0) + u'u, sum(ρ)/length(x0))
-@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x])'*[1;x[5:8];u] + 0.5*tr(σ*σ'*differentiate(differentiate(ϕ[j],x),x)),ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
-let v = monomials([t;x],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
-let v = monomials([t;x],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
+@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x])'*[1;x[5:8];u] + 0.0*tr(σ*σ'*differentiate(differentiate(ϕ[j],x),x)),ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
+let v = monomials([t;x[[1,2,5,6]];u[[1,2]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
+let v = monomials([t;x[[1,2,5,6]];u[[1,2]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
 optimize!(m)
 
 q1 = let v = monomials(x[1:2],0:d);
