@@ -16,8 +16,8 @@ frames = D[:,"frame_id"] .|> Int |> unique
 counts = [sum(D[:,"frame_id"] .== f) for f in frames]
 weight = binomial.(counts, 2)
 
-d = 3
-@polyvar t x[1:8] x1[1:4] x2[1:4]
+d = 2
+@polyvar t x[1:8] x1[1:4] x2[1:4] u[1:4]
 M = sum(DiracMeasure(x1,s) for s in collect.(eachrow(D[:,["x","y","vx","vy"]]))) / length(frames)
 K0 = let v0 = monomials(x1,0:d);
     Q = integrate.(v0*v0',[M]);
@@ -34,17 +34,17 @@ for (fi,f0) in enumerate(F[1:10:100])
 X0 = filter(e -> e["frame_id"] == f0, D)
 allpairs(d) = [[d[1,"x"],d[1,"y"],d[j,"x"],d[j,"y"],d[1,"vx"],d[1,"vy"],d[j,"vx"],d[j,"vy"]] for j=2:size(d,1)]
 x0 = allpairs(X0)
-ρ0 = [DiracMeasure([t;x],[0;_x0]) for _x0 in x0]
+ρ0 = [DiracMeasure([t;x;u],[0;_x0;0;0;0;0]) for _x0 in x0]
 
 σ = Diagonal([0.003,0.003,0.03,0.03,0.003,0.003,0.03,0.03])
-ϕ = monomials([t;x[1:4]],0:2d)
+ϕ = monomials([t;x],0:2d)
 m = GMPModel(Mosek.Optimizer)
-@variable m ρ[i=1:length(x0)]  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
-@variable m ρT[i=1:length(x0)] Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(2K + Λ1 + Λ2*length(x0), sum(ρ)/length(x0))
-@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x[1:4]])'*[1;x[5:8]] + 0.5*tr(σ*σ'*differentiate(differentiate(ϕ[j],x),x)),ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
-let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
-let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
+@variable m ρ[i=1:length(x0)]  Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10))
+@variable m ρT[i=1:length(x0)] Meas([t;x;u],support=@set([t;x;u]'*[t;x;u]<=10 && t==3))
+@objective m Min Mom(2K + Λ1 + Λ2*length(x0) + u'u, sum(ρ)/length(x0))
+@constraint m [i=1:length(x0),j=1:length(ϕ)] Mom(differentiate(ϕ[j],[t;x])'*[1;x[5:8];u] + 0.5*tr(σ*σ'*differentiate(differentiate(ϕ[j],x),x)),ρ[i]) - Mom(ϕ[j],ρT[i]) == -integrate(ϕ[j],ρ0[i])
+let v = monomials([t;x],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
+let v = monomials([t;x],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
 optimize!(m)
 
 q1 = let v = monomials(x[1:2],0:d);
