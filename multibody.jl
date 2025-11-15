@@ -35,6 +35,9 @@ allpairs(d) = [[d[i,"x"],d[i,"y"],d[j,"x"],d[j,"y"],d[i,"vx"],d[i,"vy"],d[j,"vx"
 x0 = allpairs(X0)[8]
 ρ0 = DiracMeasure([t;x],[0;x0])
 
+X1 = filter(e -> e["frame_id"] == f0+3*10, D)
+x1 = allpairs(X1)[5]
+
 ϕ = monomials([t;x[1:4]],0:2d)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
@@ -61,4 +64,5 @@ save("multibody.pdf", Axis([
     ),
     Plots.Scatter(reshape(x0[1:4],(2,2))),
     Plots.Scatter(reshape(integrate.(x[1:4],[ρT]),(2,2)),style="red"),
+    Plots.Scatter(reshape(x1[1:4],(2,2)),mark="x",style="green"),
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))
