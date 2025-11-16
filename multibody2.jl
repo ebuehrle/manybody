@@ -69,7 +69,8 @@ save("multibody2-$(fi).pdf", Axis([
         D[1:50:end,"vx"]/3, D[1:50:end,"vy"]/3,
         style="-stealth, no markers, blue"
     ),
-    Plots.Scatter(X0),
+    Plots.Scatter(X0[1,"x"],X0[1,"y"]),
+    Plots.Scatter(X0[2:end,:],mark="o",style="brown"),
     Plots.Scatter([integrate.(x[1:2],[ρT[1]]) integrate.(x[3:4],transpose(ρT))],mark="x",style="red"),
     Plots.Scatter(X1,mark="x",style="green"),
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))
