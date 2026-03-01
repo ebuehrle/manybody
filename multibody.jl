@@ -5,6 +5,7 @@ using MosekTools
 using LinearAlgebra
 using PGFPlots
 using XML
+include("vehicle.jl")
 
 istype(way, type) = any(
     e.tag == "tag" && e["k"] == "type" && e["v"] == type for e in way.children)
@@ -61,7 +62,7 @@ x1 = allpairs(X1)[5]
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(2K+Λ1+Λ2,ρ)
+@objective m Min Mom(2K+Λ1+Λ2,ρ+ρT)
 @constraint m Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ) - Mom.(ϕ,ρT) .== -integrate.(ϕ,ρ0)
 optimize!(m)
 
@@ -74,6 +75,7 @@ q2 = let v = monomials(x[3:4],0:d);
     v'*inv(Q+1e-4I)*v
 end
 
+xT = integrate.(x,[ρT])
 save("multibody.pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+1/q2(x,y),(-1,1),(-1,1));
     Plots.Quiver(
@@ -81,8 +83,11 @@ save("multibody.pdf", Axis([
         D[1:50:end,"vx"]/3, D[1:50:end,"vy"]/3,
         style="-stealth, no markers, blue"
     );
-    Plots.Scatter(reshape(x0[1:4],(2,2)));
-    Plots.Scatter(reshape(integrate.(x[1:4],[ρT]),(2,2)),style="red");
-    Plots.Scatter(reshape(x1[1:4],(2,2)),mark="x",style="green");
+    Plots.Linear(vehicle(x0[1],x0[2],x0[5],x0[6],5/20,2/20), style="brown, no markers, solid");
+    Plots.Linear(vehicle(x0[3],x0[4],x0[7],x0[8],5/20,2/20), style="brown, no markers, solid");
+    Plots.Linear(vehicle(xT[1],xT[2],xT[5],xT[6],5/20,2/20), style="red, no markers, solid");
+    Plots.Linear(vehicle(xT[3],xT[4],xT[7],xT[8],5/20,2/20), style="red, no markers, solid");
+    Plots.Linear(vehicle(x1[1],x1[2],x1[5],x1[6],5/20,2/20), style="green, no markers, solid");
+    Plots.Linear(vehicle(x1[3],x1[4],x1[7],x1[8],5/20,2/20), style="green, no markers, solid");
     [Plots.Linear(m, style="white, no markers, solid") for m in map_ways]
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))

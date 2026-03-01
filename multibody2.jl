@@ -5,6 +5,7 @@ using MosekTools
 using LinearAlgebra
 using PGFPlots
 using XML
+include("vehicle.jl")
 
 istype(way, type) = any(
     e.tag == "tag" && e["k"] == "type" && e["v"] == type for e in way.children)
@@ -58,7 +59,7 @@ x0 = allpairs(X0)
 m = GMPModel(Mosek.Optimizer)
 @variable m ρ[i=1:length(x0)]  Meas([t;x],support=@set([t;x]'*[t;x]<=10))
 @variable m ρT[i=1:length(x0)] Meas([t;x],support=@set([t;x]'*[t;x]<=10 && t==3))
-@objective m Min Mom(2K + Λ1 + Λ2*length(x0), sum(ρ)/length(x0))
+@objective m Min Mom(2K + Λ1 + Λ2*length(x0), sum(ρ)/length(x0) + sum(ρT)/length(x0))
 @constraint m [i=1:length(x0)] Mom.(differentiate(ϕ,[t;x[1:4]])*[1;x[5:8]],ρ[i]) - Mom.(ϕ,ρT[i]) .== -integrate.(ϕ,ρ0[i])
 let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρ[i])  .== Mom.(v,ρ[1]) end
 let v = monomials([t;x[[1,2,5,6]]],0:2d); @constraint m [i=2:length(x0)] Mom.(v,ρT[i]) .== Mom.(v,ρT[1]) end
@@ -81,6 +82,7 @@ X1 = D |>
     (m -> filter(e -> e["frame_id"] == f1, m)) |>
     (m -> filter(e -> e["track_id"] ∈ id0, m))
 
+xT = [integrate.(x,[ρT[1]]) integrate.(x,ρT')]
 save("multibody2-$(fi).pdf", Axis([
     Plots.Image((x,y)->1/q1(x,y)+sum(1/q(x,y) for q in q2),(-1,1),(-1,1));
     Plots.Quiver(
@@ -88,10 +90,10 @@ save("multibody2-$(fi).pdf", Axis([
         D[1:50:end,"vx"]/3, D[1:50:end,"vy"]/3,
         style="-stealth, no markers, blue"
     );
-    Plots.Scatter(X0[1,"x"],X0[1,"y"]);
-    Plots.Scatter(X0[2:end,:],mark="o",style="brown");
-    Plots.Scatter([integrate.(x[1:2],[ρT[1]]) integrate.(x[3:4],transpose(ρT))],mark="x",style="red");
-    Plots.Scatter(X1,mark="x",style="green");
+    [Plots.Linear(vehicle(x0...,5/20,2/20), style="brown, no markers, solid") for x0 in eachrow(X0[:,["x","y","vx","vy"]]) .|> collect];
+    Plots.Linear(vehicle(xT[1],xT[2],xT[5],xT[6],5/20,2/20), style="red, no markers, solid");
+    [Plots.Linear(vehicle(xt[3],xt[4],xt[7],xt[8],5/20,2/20), style="red, no markers, solid") for xt in eachcol(xT[:,2:end])];
+    [Plots.Linear(vehicle(x1...,5/20,2/20), style="green, no markers, solid") for x1 in eachrow(X1[:,["x","y","vx","vy"]]) .|> collect];
     [Plots.Linear(m, style="white, no markers, solid") for m in map_ways]
 ],xmin=-1,xmax=1,ymin=-1,ymax=1))
 end
