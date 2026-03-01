@@ -90,4 +90,4 @@ save("multibody.pdf", Axis([
     Plots.Linear(vehicle(x1[1],x1[2],x1[5],x1[6],5/20,2/20), style="green, no markers, solid");
     Plots.Linear(vehicle(x1[3],x1[4],x1[7],x1[8],5/20,2/20), style="green, no markers, solid");
     [Plots.Linear(m, style="white, no markers, solid") for m in map_ways]
-],xmin=-1,xmax=1,ymin=-1,ymax=1))
+],xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel="Easting (20\\,m)",ylabel="Northing (20\\,m)"))
