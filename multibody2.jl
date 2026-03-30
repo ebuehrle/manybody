@@ -95,5 +95,5 @@ save("multibody2-$(fi).pdf", Axis([
     [Plots.Linear(vehicle(xt[3],xt[4],xt[7],xt[8],5/20,2/20), style="red, no markers, solid") for xt in eachcol(xT[:,2:end])];
     [Plots.Linear(vehicle(x1...,5/20,2/20), style="green, no markers, solid") for x1 in eachrow(X1[:,["x","y","vx","vy"]]) .|> collect];
     [Plots.Linear(m, style="white, no markers, solid") for m in map_ways]
-],xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel="Easting (20\\,m)",ylabel="Northing (20\\,m)"))
+],xmin=-1,xmax=1,ymin=-1,ymax=1,xlabel="Easting (20\\,m)",ylabel="Northing (20\\,m)",style="colorbar style={title=Density}"))
 end
